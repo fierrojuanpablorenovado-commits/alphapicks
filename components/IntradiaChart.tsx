@@ -36,7 +36,7 @@ const TOOLTIP_STYLE = {
   borderRadius: 10,
   fontSize: 11,
   fontFamily: "'Inter',sans-serif",
-  boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
+  boxShadow: "0 8px 32px rgba(0,0,0,0.7)",
 }
 
 export default function IntradiaChart() {
@@ -65,18 +65,18 @@ export default function IntradiaChart() {
   const priceColor = up ? "#10B981" : "#EF4444"
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
 
       {/* ── Controls bar ── */}
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
 
         {/* Ticker select */}
         <div style={{
-          display: "flex", alignItems: "center", gap: 8, padding: "7px 12px",
-          background: "rgba(8,13,24,0.8)", border: "1px solid rgba(255,255,255,0.07)",
+          display: "flex", alignItems: "center", gap: 8, padding: "7px 14px",
+          background: "rgba(8,13,24,0.9)", border: "1px solid rgba(255,255,255,0.07)",
           borderRadius: 10,
         }}>
-          <span style={{ fontSize: 10, color: "#334155", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase" }}>Emisora</span>
+          <span style={{ fontSize: 10, color: "#334155", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" }}>Emisora</span>
           <select
             value={ticker}
             onChange={e => setTicker(e.target.value)}
@@ -87,22 +87,22 @@ export default function IntradiaChart() {
             }}
           >
             {IPC_TICKERS.map(t => (
-              <option key={t} value={t} style={{ background: "#080D18" }}>{t.replace('*', '')}</option>
+              <option key={t} value={t} style={{ background: "#06090F" }}>{t.replace('*', '')}</option>
             ))}
           </select>
         </div>
 
         {/* Interval pills */}
-        <div style={{ display: "flex", gap: 3, padding: 3, background: "rgba(8,13,24,0.8)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 10 }}>
+        <div style={{ display: "flex", gap: 3, padding: 3, background: "rgba(8,13,24,0.9)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 10 }}>
           {(['1m', '5m', '1h'] as const).map(iv => (
             <button
               key={iv}
               onClick={() => setIntervalo(iv)}
               style={{
-                padding: "5px 12px", borderRadius: 7,
+                padding: "5px 13px", borderRadius: 7,
                 fontSize: 12, fontWeight: 700, fontFamily: "'JetBrains Mono',monospace",
                 color: intervalo === iv ? "#F1F5F9" : "#334155",
-                background: intervalo === iv ? "rgba(99,102,241,0.2)" : "transparent",
+                background: intervalo === iv ? "rgba(99,102,241,0.18)" : "transparent",
                 border: intervalo === iv ? "1px solid rgba(99,102,241,0.35)" : "1px solid transparent",
                 cursor: "pointer", transition: "all 0.12s",
               }}
@@ -111,7 +111,7 @@ export default function IntradiaChart() {
         </div>
 
         {/* Chart type pills */}
-        <div style={{ display: "flex", gap: 3, padding: 3, background: "rgba(8,13,24,0.8)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 10 }}>
+        <div style={{ display: "flex", gap: 3, padding: 3, background: "rgba(8,13,24,0.9)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 10 }}>
           {([
             { id: 'precio' as Tab, label: 'Precio' },
             { id: 'rsi'    as Tab, label: 'RSI' },
@@ -121,10 +121,10 @@ export default function IntradiaChart() {
               key={t.id}
               onClick={() => setTab(t.id)}
               style={{
-                padding: "5px 12px", borderRadius: 7,
+                padding: "5px 13px", borderRadius: 7,
                 fontSize: 12, fontWeight: 600,
                 color: tab === t.id ? "#F1F5F9" : "#334155",
-                background: tab === t.id ? "rgba(255,255,255,0.08)" : "transparent",
+                background: tab === t.id ? "rgba(255,255,255,0.07)" : "transparent",
                 border: tab === t.id ? "1px solid rgba(255,255,255,0.12)" : "1px solid transparent",
                 cursor: "pointer", transition: "all 0.12s",
               }}
@@ -137,13 +137,13 @@ export default function IntradiaChart() {
           onClick={fetchData}
           style={{
             marginLeft: "auto", display: "flex", alignItems: "center", gap: 6,
-            padding: "7px 12px",
-            background: "rgba(8,13,24,0.8)", border: "1px solid rgba(255,255,255,0.07)",
+            padding: "7px 14px",
+            background: "rgba(8,13,24,0.9)", border: "1px solid rgba(255,255,255,0.07)",
             borderRadius: 10, color: "#334155", fontSize: 11, cursor: "pointer",
             transition: "color 0.1s, border-color 0.1s",
           }}
         >
-          <span style={{ display: "inline-block", animation: loading ? "spin 1s linear infinite" : "none", fontSize: 13 }}>↻</span>
+          <span style={{ display: "inline-block", animation: loading ? "spin 0.9s linear infinite" : "none", fontSize: 13 }}>↻</span>
           {lastAt ? lastAt.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }) : "—"}
         </button>
       </div>
@@ -153,64 +153,67 @@ export default function IntradiaChart() {
         <div style={{
           display: "flex", flexWrap: "wrap", alignItems: "center", gap: 16,
           padding: "14px 18px",
-          background: "rgba(8,13,24,0.8)", border: "1px solid rgba(255,255,255,0.07)",
+          background: "rgba(6,9,15,0.95)",
+          border: `1px solid ${up ? "rgba(16,185,129,0.12)" : "rgba(239,68,68,0.12)"}`,
           borderRadius: 12,
         }}>
-          <span className="num" style={{ fontSize: 14, fontWeight: 800, color: "#94A3B8", letterSpacing: "0.04em" }}>
+          <span className="mono" style={{ fontSize: 13, fontWeight: 700, color: "#64748B", letterSpacing: "0.06em" }}>
             {ticker.replace('*', '')}
           </span>
-          <span className="num" style={{ fontSize: 22, fontWeight: 800, color: priceColor, letterSpacing: "-0.03em" }}>
+          <span className="mono" style={{ fontSize: 24, fontWeight: 900, color: priceColor, letterSpacing: "-0.04em", lineHeight: 1 }}>
             ${data.dayStats.close.toFixed(2)}
           </span>
-          <span className="num" style={{ fontSize: 13, fontWeight: 700, color: priceColor }}>
+          <span className="mono" style={{ fontSize: 13, fontWeight: 700, color: priceColor }}>
             {up ? "▲" : "▼"} {Math.abs(data.dayStats.pctChange).toFixed(2)}%
           </span>
 
-          <div style={{ display: "flex", gap: 16, marginLeft: 4 }}>
+          <div style={{ display: "flex", gap: 18, marginLeft: 4 }}>
             {[
-              { label: "A",   val: `$${data.dayStats.open.toFixed(2)}`,  col: "#94A3B8" },
-              { label: "Max", val: `$${data.dayStats.high.toFixed(2)}`,  col: "#10B981" },
-              { label: "Min", val: `$${data.dayStats.low.toFixed(2)}`,   col: "#EF4444" },
-              { label: "Rng", val: `$${data.dayStats.range.toFixed(2)}`, col: "#94A3B8" },
+              { label: "Apertura",  val: `$${data.dayStats.open.toFixed(2)}`,  col: "#94A3B8" },
+              { label: "Máx",       val: `$${data.dayStats.high.toFixed(2)}`,  col: "#10B981" },
+              { label: "Mín",       val: `$${data.dayStats.low.toFixed(2)}`,   col: "#EF4444" },
+              { label: "Rango",     val: `$${data.dayStats.range.toFixed(2)}`, col: "#64748B" },
+              { label: "Velas",     val: String(data.points),                  col: "#475569" },
             ].map(s => (
-              <div key={s.label} style={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                <span style={{ fontSize: 9, color: "#334155", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase" }}>{s.label}</span>
-                <span className="num" style={{ fontSize: 12, fontWeight: 600, color: s.col }}>{s.val}</span>
+              <div key={s.label} style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                <span style={{ fontSize: 9, color: "#334155", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" }}>{s.label}</span>
+                <span className="mono" style={{ fontSize: 12, fontWeight: 600, color: s.col }}>{s.val}</span>
               </div>
             ))}
-            <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
-              <span style={{ fontSize: 9, color: "#334155", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase" }}>Velas</span>
-              <span className="num" style={{ fontSize: 12, fontWeight: 600, color: "#475569" }}>{data.points}</span>
-            </div>
           </div>
 
           <SignalBadge signal={data.signal} />
         </div>
       )}
 
-      {/* ── Chart ── */}
+      {/* ── Chart area ── */}
       <div style={{
-        background: "rgba(6,9,15,0.9)", border: "1px solid rgba(255,255,255,0.06)",
+        background: "rgba(4,6,12,0.95)", border: "1px solid rgba(255,255,255,0.06)",
         borderRadius: 14, padding: "16px 4px 8px", height: 360,
       }}>
         {loading ? (
           <div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
-              <div style={{ width: 20, height: 20, borderRadius: "50%", border: "2px solid rgba(99,102,241,0.4)", borderTop: "2px solid #6366F1", animation: "spin 0.8s linear infinite" }} />
-              <span style={{ fontSize: 11, color: "#334155" }}>Cargando datos...</span>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+              <div style={{
+                width: 24, height: 24, borderRadius: "50%",
+                border: "2px solid rgba(99,102,241,0.2)",
+                borderTop: "2px solid #6366F1",
+                animation: "spin 0.8s linear infinite",
+              }} />
+              <span style={{ fontSize: 12, color: "#334155" }}>Cargando datos…</span>
             </div>
           </div>
         ) : !data?.chartData?.length ? (
           <div style={{ height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8 }}>
-            <span style={{ fontSize: 24, opacity: 0.3 }}>📊</span>
-            <span style={{ fontSize: 12, color: "#334155" }}>Sin datos disponibles para hoy</span>
+            <span style={{ fontSize: 28, opacity: 0.2 }}>📊</span>
+            <span style={{ fontSize: 12, color: "#334155", fontWeight: 500 }}>Sin datos disponibles para hoy</span>
             <span style={{ fontSize: 11, color: "#1E293B" }}>Mercado cerrado o sin operaciones en {ticker.replace('*','')}</span>
           </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             {tab === 'precio' ? (
               <ComposedChart data={data.chartData} margin={{ top: 4, right: 12, left: 0, bottom: 4 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.025)" vertical={false} />
                 <XAxis
                   dataKey="time" tickFormatter={fmt}
                   tick={{ fill: "#1E293B", fontSize: 9, fontFamily: "'JetBrains Mono',monospace" }}
@@ -229,7 +232,7 @@ export default function IntradiaChart() {
                 />
                 <Legend wrapperStyle={{ fontSize: 10, color: "#334155", paddingTop: 8 }} />
                 <Line type="monotone" dataKey="bbUpper"  name="BB +" stroke="rgba(99,102,241,0.35)" strokeWidth={1} dot={false} strokeDasharray="4 4" />
-                <Line type="monotone" dataKey="bbMid"    name="BB M"  stroke="rgba(99,102,241,0.2)" strokeWidth={1} dot={false} strokeDasharray="2 4" />
+                <Line type="monotone" dataKey="bbMid"    name="BB M"  stroke="rgba(99,102,241,0.2)"  strokeWidth={1} dot={false} strokeDasharray="2 4" />
                 <Line type="monotone" dataKey="bbLower"  name="BB -"  stroke="rgba(99,102,241,0.35)" strokeWidth={1} dot={false} strokeDasharray="4 4" />
                 <Line type="monotone" dataKey="sma20"    name="SMA20" stroke="#F59E0B" strokeWidth={1.5} dot={false} strokeOpacity={0.8} />
                 <Line type="monotone" dataKey="sma50"    name="SMA50" stroke="#8B5CF6" strokeWidth={1.5} dot={false} strokeOpacity={0.8} />
@@ -240,7 +243,7 @@ export default function IntradiaChart() {
               </ComposedChart>
             ) : tab === 'rsi' ? (
               <ComposedChart data={data.chartData} margin={{ top: 4, right: 12, left: 0, bottom: 4 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.025)" vertical={false} />
                 <XAxis dataKey="time" tickFormatter={fmt}
                   tick={{ fill: "#1E293B", fontSize: 9, fontFamily: "'JetBrains Mono',monospace" }}
                   tickLine={false} axisLine={false}
@@ -254,9 +257,9 @@ export default function IntradiaChart() {
                   labelFormatter={t => typeof t === 'string' ? fmt(t) : String(t)}
                   formatter={v => [typeof v === 'number' ? v.toFixed(1) : String(v), 'RSI(14)']}
                 />
-                <ReferenceLine y={70} stroke="rgba(239,68,68,0.5)"  strokeDasharray="4 4" label={{ value: '70', fill: '#EF4444', fontSize: 9, position: 'right' }} />
+                <ReferenceLine y={70} stroke="rgba(239,68,68,0.5)"   strokeDasharray="4 4" label={{ value: '70', fill: '#EF4444', fontSize: 9, position: 'right' }} />
                 <ReferenceLine y={50} stroke="rgba(255,255,255,0.06)" strokeDasharray="2 4" />
-                <ReferenceLine y={30} stroke="rgba(16,185,129,0.5)" strokeDasharray="4 4" label={{ value: '30', fill: '#10B981', fontSize: 9, position: 'right' }} />
+                <ReferenceLine y={30} stroke="rgba(16,185,129,0.5)"  strokeDasharray="4 4" label={{ value: '30', fill: '#10B981', fontSize: 9, position: 'right' }} />
                 <Line type="monotone" dataKey="rsi" name="RSI"
                   stroke="#6366F1" strokeWidth={2.5} dot={false}
                   activeDot={{ r: 4, fill: '#6366F1', strokeWidth: 0 }}
@@ -264,7 +267,7 @@ export default function IntradiaChart() {
               </ComposedChart>
             ) : (
               <ComposedChart data={data.chartData} margin={{ top: 4, right: 12, left: 0, bottom: 4 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.025)" vertical={false} />
                 <XAxis dataKey="time" tickFormatter={fmt}
                   tick={{ fill: "#1E293B", fontSize: 9, fontFamily: "'JetBrains Mono',monospace" }}
                   tickLine={false} axisLine={false}
@@ -280,7 +283,7 @@ export default function IntradiaChart() {
                 />
                 <Legend wrapperStyle={{ fontSize: 10, color: "#334155", paddingTop: 8 }} />
                 <ReferenceLine y={0} stroke="rgba(255,255,255,0.08)" />
-                <Bar dataKey="histogram" name="Histo" fillOpacity={0.75} maxBarSize={6}>
+                <Bar dataKey="histogram" name="Histo" fillOpacity={0.8} maxBarSize={6}>
                   {data.chartData.map((e, i) => (
                     <Cell key={i} fill={(e.histogram ?? 0) >= 0 ? "#10B981" : "#EF4444"} />
                   ))}
@@ -300,25 +303,25 @@ export default function IntradiaChart() {
           padding: "12px 18px", borderRadius: 12,
           background: data.signal.type === 'BUY'  ? "rgba(16,185,129,0.05)"
                     : data.signal.type === 'SELL' ? "rgba(239,68,68,0.05)"
-                    : "rgba(8,13,24,0.8)",
+                    : "rgba(8,13,24,0.85)",
           border: `1px solid ${
             data.signal.type === 'BUY'  ? "rgba(16,185,129,0.2)"
           : data.signal.type === 'SELL' ? "rgba(239,68,68,0.2)"
           : "rgba(255,255,255,0.07)"
           }`,
         }}>
-          <span style={{ fontSize: 12, color: "#475569" }}>Señal IA:</span>
+          <span style={{ fontSize: 12, color: "#475569", fontWeight: 500 }}>Señal IA:</span>
           <span style={{ fontSize: 12, fontWeight: 600, color: "#CBD5E1" }}>{data.signal.reason}</span>
-          <div style={{ display: "flex", gap: 14, marginLeft: "auto" }}>
+          <div style={{ display: "flex", gap: 16, marginLeft: "auto" }}>
             {[
               { label: "RSI",  val: data.signal.rsi?.toFixed(1) ?? "—" },
               { label: "MACD", val: data.signal.macdSignal,
                 col: data.signal.macdSignal === 'BULLISH' ? "#10B981" : data.signal.macdSignal === 'BEARISH' ? "#EF4444" : "#475569" },
               { label: "BB",   val: data.signal.bbPosition },
             ].map(s => (
-              <div key={s.label} style={{ display: "flex", gap: 4, alignItems: "center" }}>
-                <span style={{ fontSize: 10, color: "#334155", textTransform: "uppercase", letterSpacing: "0.06em" }}>{s.label}</span>
-                <span className="num" style={{ fontSize: 11, fontWeight: 600, color: s.col ?? "#94A3B8" }}>{s.val}</span>
+              <div key={s.label} style={{ display: "flex", gap: 5, alignItems: "center" }}>
+                <span style={{ fontSize: 9, color: "#334155", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600 }}>{s.label}</span>
+                <span className="mono" style={{ fontSize: 11, fontWeight: 700, color: s.col ?? "#94A3B8" }}>{s.val}</span>
               </div>
             ))}
           </div>
@@ -333,21 +336,20 @@ export default function IntradiaChart() {
 function SignalBadge({ signal }: { signal: TradingSignal }) {
   const isBuy  = signal.type === 'BUY'
   const isSell = signal.type === 'SELL'
-  const color  = isBuy ? "#10B981" : isSell ? "#EF4444" : "#475569"
-  const bg     = isBuy ? "rgba(16,185,129,0.1)" : isSell ? "rgba(239,68,68,0.1)" : "rgba(71,85,105,0.2)"
-  const brd    = isBuy ? "rgba(16,185,129,0.3)"  : isSell ? "rgba(239,68,68,0.3)"  : "rgba(71,85,105,0.3)"
   const dots   = { STRONG: "●●●", MODERATE: "●●○", WEAK: "●○○" }
   const labels = { BUY: "COMPRA", SELL: "VENTA", NEUTRAL: "NEUTRAL" }
 
+  const cls = isBuy ? "badge-buy" : isSell ? "badge-sell" : "badge-neutral"
+
   return (
     <div
+      className={cls}
       style={{
         marginLeft: "auto", display: "flex", alignItems: "center", gap: 6,
         padding: "6px 12px", borderRadius: 8,
-        background: bg, border: `1px solid ${brd}`, color,
       }}
     >
-      <span className="num" style={{ fontSize: 10, letterSpacing: "0.08em" }}>{dots[signal.strength]}</span>
+      <span className="mono" style={{ fontSize: 10, letterSpacing: "0.06em" }}>{dots[signal.strength]}</span>
       <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.04em" }}>
         {isBuy ? "▲ " : isSell ? "▼ " : "→ "}{labels[signal.type]}
       </span>
