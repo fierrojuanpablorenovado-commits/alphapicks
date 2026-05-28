@@ -8,6 +8,10 @@
 import { NextResponse } from 'next/server'
 import { getIPCQuotes, getDivisas } from '@/lib/databursatil'
 
+// Forzar ejecución dinámica: esta ruta llama a DataBursatil en tiempo real
+// Sin esto Next.js la pre-renderiza estáticamente en build time (token no disponible → datos vacíos)
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   try {
     const [quotes, divisas] = await Promise.all([

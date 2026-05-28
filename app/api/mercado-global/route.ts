@@ -6,6 +6,9 @@
 import { NextResponse } from 'next/server'
 import { getIndices, getNoticias, getDivisas, getIPCQuotes } from '@/lib/databursatil'
 
+// Forzar ejecución dinámica: datos en tiempo real, no pre-renderizar en build
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   const [indices, noticias, divisas, quotes] = await Promise.all([
     getIndices(),
