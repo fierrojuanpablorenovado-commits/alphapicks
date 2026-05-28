@@ -11,14 +11,14 @@ import {
   type DBFinancierosType,
 } from '@/lib/databursatil'
 
-// Mapeo de emisora_serie → emisora (sin serie) para el endpoint
+// Mapeo de emisora_serie → emisora (sin serie) para el endpoint financieros
 const SERIE_TO_EMISORA: Record<string, string> = {
   'AMXL':       'AMX',
   'WALMEX*':    'WALMEX',
   'BIMBOA':     'BIMBO',
   'FEMSAUBD':   'FEMSA',
   'GCARSOA1':   'GCARSO',
-  'GMEXICOB':   'GMEXICOB',  // Grupo México
+  'GMEXICOB':   'GMEXICOB',
   'GFINBURO':   'GFINBUR',
   'CEMEXCPO':   'CEMEX',
   'TLEVISACPO': 'TLEVISA',
@@ -40,7 +40,6 @@ const SERIE_TO_EMISORA: Record<string, string> = {
   'MEGACPO':    'MEGACBL',
   'LACOMERUBC': 'LACOMU',
 }
-export { SERIE_TO_EMISORA }
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
