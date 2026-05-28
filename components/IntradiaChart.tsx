@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import {
-  ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
+  ComposedChart, Line, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, ReferenceLine, Legend,
 } from 'recharts'
 
@@ -301,13 +301,11 @@ export default function IntradiaChart() {
                 />
                 <Legend wrapperStyle={{ fontSize: 11, color: '#9ca3af' }} />
                 <ReferenceLine y={0} stroke="#4b5563" strokeOpacity={0.6} />
-                <Bar dataKey="histogram" name="Histograma" fill="#6b7280"
-                  shape={(props: { x?: number; y?: number; width?: number; height?: number; value?: number }) => {
-                    const { x = 0, y = 0, width = 0, height = 0, value = 0 } = props
-                    const fill = value >= 0 ? '#34d399' : '#f87171'
-                    return <rect x={x} y={y} width={width} height={height} fill={fill} fillOpacity={0.7} />
-                  }}
-                />
+                <Bar dataKey="histogram" name="Histograma" fillOpacity={0.7}>
+                  {data.chartData.map((entry, i) => (
+                    <Cell key={i} fill={(entry.histogram ?? 0) >= 0 ? '#34d399' : '#f87171'} />
+                  ))}
+                </Bar>
                 <Line type="monotone" dataKey="macd"       name="MACD"    stroke="#60a5fa" strokeWidth={2} dot={false} />
                 <Line type="monotone" dataKey="macdSignal" name="Señal"   stroke="#f97316" strokeWidth={1.5} dot={false} strokeDasharray="4 4" />
               </ComposedChart>
