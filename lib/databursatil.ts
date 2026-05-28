@@ -7,7 +7,8 @@
  */
 
 const BASE = 'https://api.databursatil.com/v2'
-const TOKEN = process.env.DATABURSATIL_TOKEN!
+// .trim() elimina cualquier \n que echo haya añadido al guardar la variable en Vercel
+const TOKEN = (process.env.DATABURSATIL_TOKEN ?? '').trim()
 
 /**
  * Mapeo de tickers FMP (.MX) → DataBursatil (emisora_serie)
