@@ -242,3 +242,111 @@ export const fadeUpItem = {
     transition: { type: 'spring' as const, stiffness: 110, damping: 18 },
   },
 }
+
+/* ─────────────────────────────────────────────────────────────────────────
+ *  Mini Sparkline  —  inline SVG, lightweight, deterministic from `change`
+ * ───────────────────────────────────────────────────────────────────────── */
+export function MiniSparkline({
+  change,
+  color,
+  width = 100,
+  height = 24,
+  strokeWidth = 1.4,
+  fill = true,
+  seed = 0,
+}: {
+  change: number
+  color: string
+  width?: number
+  height?: number
+  strokeWidth?: number
+  fill?: boolean
+  seed?: number
+}) {
+  // 16 deterministic points biased toward `change` direction
+  const N = 16
+  const trend = change / 100
+  const points = Array.from({ length: N }, (_, i) => {
+    const x = (i / (N - 1)) * width
+    const progress = i / (N - 1)
+    const noise =
+      Math.sin((i + seed) * 1.6) * 0.35 +
+      Math.cos((i + seed) * 0.9) * 0.25 +
+      Math.sin((i + seed) * 2.4) * 0.18
+    // y in [0..1] where 0 is top, 1 is bottom
+    const yNorm = 0.5 - (progress * trend * 6) - noise * 0.12
+    const y = Math.max(0.05, Math.min(0.95, yNorm)) * height
+    return { x, y }
+  })
+
+  const path = points.map((p, i) => (i === 0 ? `M${p.x.toFixed(1)},${p.y.toFixed(1)}` : `L${p.x.toFixed(1)},${p.y.toFixed(1)}`)).join(' ')
+  const areaPath = `${path} L${width},${height} L0,${height} Z`
+  const gradId = `spark-${seed}-${color.replace(/[^a-z0-9]/gi, '')}`
+
+  return (
+    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" style={{ display: 'block' }}>
+      {fill && (
+        <defs>
+          <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%"   stopColor={color} stopOpacity="0.35" />
+            <stop offset="100%" stopColor={color} stopOpacity="0" />
+          </linearGradient>
+        </defs>
+      )}
+      {fill && <path d={areaPath} fill={`url(#${gradId})`} />}
+      <path d={path} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+ *  Sector Donut  —  proportion of gainers vs losers vs flat
+ * ───────────────────────────────────────────────────────────────────────── */
+export function SentimentDonut({
+  up,
+  down,
+  size = 96,
+  thickness = 10,
+}: {
+  up: number
+  down: number
+  size?: number
+  thickness?: number
+}) {
+  const total = up + down || 1
+  const r = (size - thickness) / 2
+  const C = 2 * Math.PI * r
+  const upArc = (up / total) * C
+  const downArc = (down / total) * C
+  const center = size / 2
+  const upPct = Math.round((up / total) * 100)
+
+  return (
+    <div style={{ position: 'relative', width: size, height: size, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        {/* Track */}
+        <circle cx={center} cy={center} r={r} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth={thickness} />
+        {/* Down arc (red) — starts at top, drawn clockwise */}
+        <circle
+          cx={center} cy={center} r={r} fill="none"
+          stroke="#EF4444" strokeWidth={thickness} strokeLinecap="round"
+          strokeDasharray={`${downArc} ${C}`}
+          transform={`rotate(${-90 + (up / total) * 360} ${center} ${center})`}
+          style={{ filter: 'drop-shadow(0 0 8px rgba(239,68,68,0.4))' }}
+        />
+        {/* Up arc (green) */}
+        <circle
+          cx={center} cy={center} r={r} fill="none"
+          stroke="#10B981" strokeWidth={thickness} strokeLinecap="round"
+          strokeDasharray={`${upArc} ${C}`}
+          transform={`rotate(-90 ${center} ${center})`}
+          style={{ filter: 'drop-shadow(0 0 8px rgba(16,185,129,0.5))' }}
+        />
+      </svg>
+      <div style={{ position: 'absolute', textAlign: 'center', lineHeight: 1 }}>
+        <div className="mono" style={{ fontSize: 18, fontWeight: 800, color: '#F8FAFC' }}>{upPct}%</div>
+        <div style={{ fontSize: 8, color: '#64748B', fontWeight: 700, letterSpacing: '0.08em', marginTop: 2 }}>ALCISTA</div>
+      </div>
+    </div>
+  )
+}
