@@ -2,24 +2,254 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Fuentes Premium ──────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+/* ── Variables de diseño ─────────────────────────────────────────────── */
+:root {
+  /* Backgrounds */
+  --bg-base:      #04080F;
+  --bg-surface:   #080D18;
+  --bg-card:      rgba(10, 16, 30, 0.9);
+  --bg-card-hover:rgba(13, 21, 38, 0.95);
+
+  /* Borders */
+  --border:       rgba(255,255,255,0.06);
+  --border-hover: rgba(255,255,255,0.12);
+  --border-brand: rgba(99,102,241,0.3);
+
+  /* Brand */
+  --brand:        #6366F1;
+  --brand-light:  #818CF8;
+  --brand-glow:   rgba(99,102,241,0.25);
+
+  /* Semantic */
+  --green:        #10B981;
+  --green-glow:   rgba(16,185,129,0.15);
+  --red:          #EF4444;
+  --red-glow:     rgba(239,68,68,0.15);
+  --amber:        #F59E0B;
+
+  /* Text hierarchy */
+  --text-1: #F1F5F9;
+  --text-2: #94A3B8;
+  --text-3: #475569;
+  --text-4: #1E293B;
+}
+
+/* ── Base ────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+
 body {
-  background-color: #0a0e1a;
-  color: #e2e8f0;
-  font-family: system-ui, -apple-system, sans-serif;
+  background-color: var(--bg-base);
+  color: var(--text-1);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
 }
 
-.card {
-  background: #111827;
-  border: 1px solid #1e2d45;
-  border-radius: 12px;
+/* ── Scrollbar custom ────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+/* ── Cards ───────────────────────────────────────────────────────────── */
+.glass-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+}
+.glass-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
 }
 
-.card2 {
-  background: #1a2235;
-  border: 1px solid #1e2d45;
+.glass-card-sm {
+  background: rgba(8,13,24,0.8);
+  border: 1px solid var(--border);
   border-radius: 10px;
+  transition: border-color 0.15s, background 0.15s;
+}
+.glass-card-sm:hover {
+  border-color: var(--border-hover);
 }
 
-.positive { color: #22c55e; }
-.negative { color: #ef4444; }
-.muted { color: #64748b; }
+/* ── Colores semánticos ──────────────────────────────────────────────── */
+.positive { color: var(--green); }
+.negative { color: var(--red); }
+.muted    { color: var(--text-3); }
+.brand    { color: var(--brand); }
+
+.positive-bg { background: var(--green-glow); }
+.negative-bg { background: var(--red-glow); }
+
+/* ── Tipografía numérica ─────────────────────────────────────────────── */
+.num {
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+/* ── Gradiente de texto (para headlines) ─────────────────────────────── */
+.gradient-text {
+  background: linear-gradient(135deg, #F1F5F9 0%, #94A3B8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.gradient-brand {
+  background: linear-gradient(135deg, #818CF8 0%, #C084FC 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Shimmer skeleton ────────────────────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.07) 50%, rgba(255,255,255,0.03) 100%);
+  background-size: 800px 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+/* ── Ticker scrolling ────────────────────────────────────────────────── */
+@keyframes ticker-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.ticker-track {
+  display: flex;
+  gap: 0;
+  animation: ticker-scroll var(--ticker-duration, 60s) linear infinite;
+  will-change: transform;
+}
+.ticker-track:hover { animation-play-state: paused; }
+
+/* ── Pulse live ──────────────────────────────────────────────────────── */
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.35; }
+}
+.live-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  animation: live-pulse 2s ease-in-out infinite;
+  box-shadow: 0 0 0 0 var(--green-glow);
+}
+
+/* ── Flash en cambio de precio ───────────────────────────────────────── */
+@keyframes flash-green {
+  0%   { background: rgba(16,185,129,0.25); }
+  100% { background: transparent; }
+}
+@keyframes flash-red {
+  0%   { background: rgba(239,68,68,0.25); }
+  100% { background: transparent; }
+}
+.flash-up   { animation: flash-green 0.8s ease-out; }
+.flash-down { animation: flash-red   0.8s ease-out; }
+
+/* ── Botones ─────────────────────────────────────────────────────────── */
+.btn-primary {
+  background: linear-gradient(135deg, var(--brand) 0%, #8B5CF6 100%);
+  border: 1px solid rgba(99,102,241,0.4);
+  color: #fff;
+  border-radius: 10px;
+  padding: 8px 18px;
+  font-weight: 600;
+  font-size: 13px;
+  transition: opacity 0.15s, transform 0.1s, box-shadow 0.15s;
+  box-shadow: 0 0 0 0 var(--brand-glow);
+  cursor: pointer;
+}
+.btn-primary:hover {
+  opacity: 0.9;
+  box-shadow: 0 0 20px var(--brand-glow);
+  transform: translateY(-1px);
+}
+.btn-primary:active { transform: translateY(0); }
+
+.btn-ghost {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  color: var(--text-2);
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  cursor: pointer;
+}
+.btn-ghost:hover {
+  background: rgba(255,255,255,0.07);
+  border-color: var(--border-hover);
+  color: var(--text-1);
+}
+
+/* ── Signal badges ───────────────────────────────────────────────────── */
+.signal-buy  { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); color: #10B981; }
+.signal-sell { background: rgba(239,68,68,0.1);  border: 1px solid rgba(239,68,68,0.3);  color: #EF4444; }
+.signal-neutral { background: rgba(71,85,105,0.3); border: 1px solid rgba(71,85,105,0.4); color: #94A3B8; }
+
+/* ── Gradiente de bordes en cards destacados ─────────────────────────── */
+.card-glow-green {
+  box-shadow: 0 0 24px rgba(16,185,129,0.08), inset 0 1px 0 rgba(16,185,129,0.1);
+}
+.card-glow-red {
+  box-shadow: 0 0 24px rgba(239,68,68,0.08), inset 0 1px 0 rgba(239,68,68,0.1);
+}
+.card-glow-brand {
+  box-shadow: 0 0 24px rgba(99,102,241,0.12), inset 0 1px 0 rgba(99,102,241,0.15);
+}
+
+/* ── Tabs slider ─────────────────────────────────────────────────────── */
+.tab-active {
+  background: rgba(255,255,255,0.08);
+  color: var(--text-1);
+  box-shadow: 0 1px 0 0 rgba(255,255,255,0.1) inset;
+}
+
+/* ── Table premium ───────────────────────────────────────────────────── */
+.data-row {
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  transition: background 0.1s;
+}
+.data-row:hover {
+  background: rgba(255,255,255,0.025);
+}
+.data-row:last-child { border-bottom: none; }
+
+/* ── Fade-in animation ───────────────────────────────────────────────── */
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-in-up { animation: fade-in-up 0.4s ease-out both; }
+
+/* ── Recharts overrides ──────────────────────────────────────────────── */
+.recharts-tooltip-wrapper .recharts-default-tooltip {
+  background: #0A0F1A !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5) !important;
+  font-family: 'Inter', sans-serif !important;
+  font-size: 12px !important;
+}
+
+/* ── Glow decorative lines ───────────────────────────────────────────── */
+.glow-line-brand {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--brand), transparent);
+  opacity: 0.4;
+}

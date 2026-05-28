@@ -11,7 +11,6 @@ type Quote = {
   volume: number
   timestamp: string
 }
-
 type MarketStats = {
   totalActive: number
   totalGainers: number
@@ -20,212 +19,281 @@ type MarketStats = {
   topGainer: Quote | null
   topLoser: Quote | null
 }
-
 type BMVData = {
   updatedAt: string
   quotes: Quote[]
   marketStats: MarketStats
-  divisas?: {
-    USDMXN?: { u: number; c: number }
-  }
+  divisas?: { USDMXN?: { u: number; c: number }; EURMXN?: { u: number; c: number } }
 }
 
-// ─── Ticker scrolling banner ────────────────────────────────────────────────────
+// ─── Ticker Banner Premium ─────────────────────────────────────────────────────
 export function BMVTickerBanner() {
   const [data, setData] = useState<BMVData | null>(null)
-  const [loading, setLoading] = useState(true)
 
   const fetchData = useCallback(async () => {
     try {
       const res = await fetch('/api/bmv', { cache: 'no-store' })
       if (res.ok) setData(await res.json())
-    } catch {} finally {
-      setLoading(false)
-    }
+    } catch { /* silently fail */ }
   }, [])
 
   useEffect(() => {
     fetchData()
-    // Actualizar cada 60 segundos durante sesión
-    const interval = setInterval(fetchData, 60_000)
-    return () => clearInterval(interval)
+    const t = setInterval(fetchData, 60_000)
+    return () => clearInterval(t)
   }, [fetchData])
 
-  if (loading) {
+  if (!data?.quotes?.length) {
     return (
-      <div className="bg-zinc-900 border-b border-zinc-800 h-9 flex items-center px-4">
-        <span className="text-zinc-500 text-xs animate-pulse">Cargando datos BMV...</span>
-      </div>
+      <div style={{
+        height: 36,
+        background: "rgba(4,8,15,0.95)",
+        borderBottom: "1px solid rgba(255,255,255,0.04)",
+      }} />
     )
   }
 
-  if (!data?.quotes?.length) return null
-
   const active = data.quotes.filter(q => {
-    const ts = new Date(q.timestamp).getTime()
-    return (Date.now() - ts) / 1000 / 3600 < 24
+    return (Date.now() - new Date(q.timestamp).getTime()) / 3_600_000 < 24
   })
-
   const usdmxn = data.divisas?.USDMXN
+  const duration = Math.max(active.length * 3.5, 50)
 
   return (
-    <div className="bg-zinc-950 border-b border-zinc-800/60 overflow-hidden h-8 flex items-center">
-      {/* USD/MXN fijo a la izquierda */}
+    <div
+      style={{
+        height: 36,
+        background: "rgba(4,8,15,0.98)",
+        borderBottom: "1px solid rgba(255,255,255,0.05)",
+        overflow: "hidden",
+        display: "flex",
+        alignItems: "center",
+        position: "relative",
+      }}
+    >
+      {/* USD/MXN pinned left */}
       {usdmxn && (
-        <div className="flex-shrink-0 flex items-center gap-2 px-3 border-r border-zinc-800 h-full bg-zinc-900/80">
-          <span className="text-zinc-400 text-[11px] font-mono">USD/MXN</span>
-          <span className="text-white text-[11px] font-mono font-semibold">
+        <div
+          style={{
+            flexShrink: 0,
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            padding: "0 14px",
+            borderRight: "1px solid rgba(255,255,255,0.07)",
+            height: "100%",
+            background: "rgba(8,13,24,0.9)",
+            zIndex: 2,
+          }}
+        >
+          <span style={{ fontSize: 10, color: "#475569", fontFamily: "'JetBrains Mono',monospace", letterSpacing: "0.05em" }}>
+            USD/MXN
+          </span>
+          <span style={{ fontSize: 12, color: "#F1F5F9", fontFamily: "'JetBrains Mono',monospace", fontWeight: 600 }}>
             {usdmxn.u.toFixed(4)}
           </span>
-          <span className={`text-[10px] font-mono ${usdmxn.c >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-            {usdmxn.c >= 0 ? '+' : ''}{usdmxn.c.toFixed(2)}%
+          <span style={{
+            fontSize: 10,
+            fontFamily: "'JetBrains Mono',monospace",
+            fontWeight: 500,
+            color: usdmxn.c >= 0 ? "#10B981" : "#EF4444",
+          }}>
+            {usdmxn.c >= 0 ? "+" : ""}{usdmxn.c.toFixed(2)}%
           </span>
         </div>
       )}
 
-      {/* Ticker scrolling */}
-      <div className="flex-1 overflow-hidden">
+      {/* Fade edges */}
+      <div style={{
+        position: "absolute", left: usdmxn ? 120 : 0, top: 0, bottom: 0, width: 32,
+        background: "linear-gradient(90deg, rgba(4,8,15,0.9), transparent)",
+        zIndex: 2, pointerEvents: "none",
+      }} />
+      <div style={{
+        position: "absolute", right: 0, top: 0, bottom: 0, width: 40,
+        background: "linear-gradient(270deg, rgba(4,8,15,0.9), transparent)",
+        zIndex: 2, pointerEvents: "none",
+      }} />
+
+      {/* Scrolling track */}
+      <div style={{ flex: 1, overflow: "hidden" }}>
         <div
-          className="flex gap-6 items-center whitespace-nowrap"
-          style={{
-            animation: `scroll-ticker ${active.length * 4}s linear infinite`,
-          }}
+          className="ticker-track"
+          style={{ "--ticker-duration": `${duration}s` } as React.CSSProperties}
         >
           {[...active, ...active].map((q, i) => {
             const up = q.change >= 0
-            // Strip .MX suffix for display
             const label = q.fmpSymbol.replace('.MX', '').replace('*', '')
             return (
-              <span key={`${q.symbol}-${i}`} className="inline-flex items-center gap-1.5 text-[11px]">
-                <span className="text-zinc-300 font-medium font-mono">{label}</span>
-                <span className="text-zinc-200 font-mono">{q.price.toFixed(2)}</span>
-                <span className={`font-mono ${up ? 'text-emerald-400' : 'text-red-400'}`}>
-                  {up ? '▲' : '▼'} {Math.abs(q.change).toFixed(2)}%
+              <span
+                key={`${q.symbol}-${i}`}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "0 20px",
+                  borderRight: "1px solid rgba(255,255,255,0.04)",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                <span style={{
+                  fontSize: 11, fontWeight: 600, color: "#94A3B8",
+                  fontFamily: "'Inter',sans-serif", letterSpacing: "0.04em",
+                }}>
+                  {label}
+                </span>
+                <span style={{
+                  fontSize: 11, color: "#F1F5F9",
+                  fontFamily: "'JetBrains Mono',monospace", fontWeight: 500,
+                }}>
+                  {q.price.toFixed(2)}
+                </span>
+                <span style={{
+                  fontSize: 10,
+                  fontFamily: "'JetBrains Mono',monospace",
+                  fontWeight: 600,
+                  color: up ? "#10B981" : "#EF4444",
+                }}>
+                  {up ? "▲" : "▼"} {Math.abs(q.change).toFixed(2)}%
                 </span>
               </span>
             )
           })}
         </div>
       </div>
-
-      <style jsx>{`
-        @keyframes scroll-ticker {
-          0%   { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
-        }
-      `}</style>
     </div>
   )
 }
 
-// ─── Panel de mercado completo ─────────────────────────────────────────────────
+// ─── Market Panel Premium ──────────────────────────────────────────────────────
 export function BMVMarketPanel() {
   const [data, setData] = useState<BMVData | null>(null)
   const [loading, setLoading] = useState(true)
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null)
+  const [sortBy, setSortBy] = useState<'change' | 'price' | 'volume'>('change')
+  const [sortDir, setSortDir] = useState<1 | -1>(-1)
 
   const fetchData = useCallback(async () => {
     try {
       const res = await fetch('/api/bmv', { cache: 'no-store' })
-      if (res.ok) {
-        setData(await res.json())
-        setLastRefresh(new Date())
-      }
-    } catch {} finally {
-      setLoading(false)
-    }
+      if (res.ok) { setData(await res.json()); setLastRefresh(new Date()) }
+    } catch { /* silently fail */ } finally { setLoading(false) }
   }, [])
 
-  useEffect(() => {
-    fetchData()
-    const interval = setInterval(fetchData, 60_000)
-    return () => clearInterval(interval)
-  }, [fetchData])
+  useEffect(() => { fetchData(); const t = setInterval(fetchData, 60_000); return () => clearInterval(t) }, [fetchData])
 
-  if (loading) {
-    return (
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 animate-pulse">
-        {[...Array(4)].map((_, i) => (
-          <div key={i} className="bg-zinc-900 rounded-xl h-20" />
-        ))}
-      </div>
-    )
-  }
-
+  if (loading) return <SkeletonPanel />
   if (!data) return null
 
   const { marketStats, divisas, quotes } = data
   const usdmxn = divisas?.USDMXN
 
-  const active = quotes.filter(q => {
-    const ts = new Date(q.timestamp).getTime()
-    return (Date.now() - ts) / 1000 / 3600 < 24
-  }).sort((a, b) => b.change - a.change)
+  const active = quotes
+    .filter(q => (Date.now() - new Date(q.timestamp).getTime()) / 3_600_000 < 24)
+    .sort((a, b) => {
+      const va = sortBy === 'change' ? a.change : sortBy === 'price' ? a.price : a.volume
+      const vb = sortBy === 'change' ? b.change : sortBy === 'price' ? b.price : b.volume
+      return (va - vb) * sortDir
+    })
+
+  const handleSort = (col: typeof sortBy) => {
+    if (sortBy === col) setSortDir(d => d === 1 ? -1 : 1)
+    else { setSortBy(col); setSortDir(-1) }
+  }
 
   return (
-    <div className="space-y-4">
-      {/* Stats row */}
+    <div className="space-y-5 fade-in-up">
+      {/* ── Stats strip ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <StatCard
+        <StatTile
           label="Emisoras activas"
           value={String(marketStats.totalActive)}
           sub={`${marketStats.totalGainers} alzas · ${marketStats.totalLosers} bajas`}
-          color="zinc"
+          variant="neutral"
         />
-        <StatCard
+        <StatTile
           label="Tendencia IPC"
-          value={`${marketStats.avgChange >= 0 ? '+' : ''}${marketStats.avgChange.toFixed(2)}%`}
+          value={`${marketStats.avgChange >= 0 ? "+" : ""}${marketStats.avgChange.toFixed(2)}%`}
           sub="Promedio del día"
-          color={marketStats.avgChange >= 0 ? 'emerald' : 'red'}
+          variant={marketStats.avgChange >= 0 ? "up" : "down"}
         />
         {marketStats.topGainer && (
-          <StatCard
+          <StatTile
             label="Mayor alza"
             value={`+${marketStats.topGainer.change.toFixed(2)}%`}
             sub={marketStats.topGainer.fmpSymbol.replace('.MX', '')}
-            color="emerald"
+            variant="up"
           />
         )}
         {usdmxn && (
-          <StatCard
-            label="USD/MXN"
+          <StatTile
+            label="USD / MXN"
             value={usdmxn.u.toFixed(4)}
-            sub={`${usdmxn.c >= 0 ? '+' : ''}${usdmxn.c.toFixed(2)}% hoy`}
-            color={usdmxn.c >= 0 ? 'emerald' : 'red'}
+            sub={`${usdmxn.c >= 0 ? "+" : ""}${usdmxn.c.toFixed(2)}% hoy`}
+            variant={usdmxn.c >= 0 ? "up" : "down"}
           />
         )}
       </div>
 
-      {/* Quotes table */}
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+      {/* ── Table ── */}
+      <div className="glass-card overflow-hidden">
+        <table className="w-full">
           <thead>
-            <tr className="border-b border-zinc-800">
-              <th className="text-left py-2 px-3 text-zinc-500 font-medium text-xs">Emisora</th>
-              <th className="text-right py-2 px-3 text-zinc-500 font-medium text-xs">Precio</th>
-              <th className="text-right py-2 px-3 text-zinc-500 font-medium text-xs">Cambio %</th>
-              <th className="text-right py-2 px-3 text-zinc-500 font-medium text-xs hidden sm:table-cell">Cambio $</th>
-              <th className="text-right py-2 px-3 text-zinc-500 font-medium text-xs hidden md:table-cell">Volumen</th>
+            <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+              <Th label="Emisora" />
+              <Th label="Precio" align="right" onClick={() => handleSort('price')} active={sortBy === 'price'} dir={sortDir} />
+              <Th label="Cambio %" align="right" onClick={() => handleSort('change')} active={sortBy === 'change'} dir={sortDir} />
+              <Th label="Cambio $" align="right" cls="hidden sm:table-cell" />
+              <Th label="Volumen" align="right" onClick={() => handleSort('volume')} active={sortBy === 'volume'} dir={sortDir} cls="hidden md:table-cell" />
             </tr>
           </thead>
           <tbody>
-            {active.map(q => {
+            {active.map((q, i) => {
               const up = q.change >= 0
               const label = q.fmpSymbol.replace('.MX', '')
               return (
-                <tr key={q.symbol} className="border-b border-zinc-900 hover:bg-zinc-900/50 transition-colors">
-                  <td className="py-2 px-3 font-mono font-semibold text-zinc-200 text-xs">{label}</td>
-                  <td className="py-2 px-3 text-right font-mono text-zinc-200 text-xs">
-                    ${q.price.toFixed(2)}
+                <tr
+                  key={q.symbol}
+                  className="data-row"
+                  style={{ animationDelay: `${i * 0.02}s` }}
+                >
+                  <td style={{ padding: "10px 16px" }}>
+                    <span style={{
+                      fontFamily: "'JetBrains Mono',monospace",
+                      fontWeight: 600,
+                      fontSize: 12,
+                      color: "#E2E8F0",
+                      letterSpacing: "0.03em",
+                    }}>{label}</span>
                   </td>
-                  <td className={`py-2 px-3 text-right font-mono text-xs font-semibold ${up ? 'text-emerald-400' : 'text-red-400'}`}>
-                    {up ? '+' : ''}{q.change.toFixed(2)}%
+                  <td style={{ padding: "10px 16px", textAlign: "right" }}>
+                    <span className="num" style={{ fontSize: 12, color: "#CBD5E1" }}>
+                      {q.price.toFixed(2)}
+                    </span>
                   </td>
-                  <td className={`py-2 px-3 text-right font-mono text-xs hidden sm:table-cell ${up ? 'text-emerald-400/70' : 'text-red-400/70'}`}>
-                    {up ? '+' : ''}{q.changeAbs.toFixed(2)}
+                  <td style={{ padding: "10px 16px", textAlign: "right" }}>
+                    <span style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 4,
+                      fontFamily: "'JetBrains Mono',monospace",
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: up ? "#10B981" : "#EF4444",
+                    }}>
+                      <span style={{ fontSize: 8 }}>{up ? "▲" : "▼"}</span>
+                      {Math.abs(q.change).toFixed(2)}%
+                    </span>
                   </td>
-                  <td className="py-2 px-3 text-right font-mono text-zinc-500 text-xs hidden md:table-cell">
-                    {formatVolume(q.volume)}
+                  <td style={{ padding: "10px 16px", textAlign: "right" }} className="hidden sm:table-cell">
+                    <span className="num" style={{ fontSize: 11, color: up ? "rgba(16,185,129,0.7)" : "rgba(239,68,68,0.7)" }}>
+                      {up ? "+" : ""}{q.changeAbs.toFixed(2)}
+                    </span>
+                  </td>
+                  <td style={{ padding: "10px 16px", textAlign: "right" }} className="hidden md:table-cell">
+                    <span className="num" style={{ fontSize: 11, color: "#475569" }}>
+                      {fmtVol(q.volume)}
+                    </span>
                   </td>
                 </tr>
               )
@@ -235,37 +303,80 @@ export function BMVMarketPanel() {
       </div>
 
       {lastRefresh && (
-        <p className="text-zinc-600 text-xs text-right">
-          Actualizado {lastRefresh.toLocaleTimeString('es-MX')} · Fuente: DataBursatil (BMV)
-        </p>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span style={{ fontSize: 11, color: "#1E293B" }}>
+            Fuente: DataBursatil — BMV
+          </span>
+          <button onClick={fetchData} style={{ fontSize: 11, color: "#475569", cursor: "pointer", background: "none", border: "none" }}>
+            ↻ {lastRefresh.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}
+          </button>
+        </div>
       )}
     </div>
   )
 }
 
-// ─── Helpers ───────────────────────────────────────────────────────────────────
+// ─── Sub-components ────────────────────────────────────────────────────────────
 
-function StatCard({ label, value, sub, color }: {
-  label: string
-  value: string
-  sub: string
-  color: 'zinc' | 'emerald' | 'red'
+function StatTile({ label, value, sub, variant }: {
+  label: string; value: string; sub: string
+  variant: 'up' | 'down' | 'neutral'
 }) {
-  const colors = {
-    zinc:    'text-zinc-200',
-    emerald: 'text-emerald-400',
-    red:     'text-red-400',
-  }
+  const accent = variant === 'up' ? '#10B981' : variant === 'down' ? '#EF4444' : '#94A3B8'
+  const glow   = variant === 'up' ? 'rgba(16,185,129,0.06)' : variant === 'down' ? 'rgba(239,68,68,0.06)' : 'transparent'
   return (
-    <div className="bg-zinc-900/60 border border-zinc-800/60 rounded-xl p-3">
-      <p className="text-zinc-500 text-xs mb-1">{label}</p>
-      <p className={`text-base font-bold font-mono ${colors[color]}`}>{value}</p>
-      <p className="text-zinc-600 text-xs mt-0.5">{sub}</p>
+    <div
+      className="glass-card"
+      style={{ padding: "14px 16px", background: `rgba(10,16,30,0.9)`, boxShadow: `0 0 24px ${glow}` }}
+    >
+      <p style={{ fontSize: 11, color: "#475569", marginBottom: 6, fontWeight: 500, letterSpacing: "0.03em", textTransform: "uppercase" }}>
+        {label}
+      </p>
+      <p className="num" style={{ fontSize: 18, fontWeight: 700, color: accent, lineHeight: 1.1 }}>
+        {value}
+      </p>
+      <p style={{ fontSize: 11, color: "#334155", marginTop: 4 }}>{sub}</p>
     </div>
   )
 }
 
-function formatVolume(v: number): string {
+function Th({ label, align, onClick, active, dir, cls }: {
+  label: string; align?: "right" | "left"; onClick?: () => void; active?: boolean; dir?: number; cls?: string
+}) {
+  return (
+    <th
+      className={cls}
+      onClick={onClick}
+      style={{
+        padding: "10px 16px",
+        textAlign: align ?? "left",
+        fontSize: 11,
+        fontWeight: 500,
+        color: active ? "#F1F5F9" : "#334155",
+        textTransform: "uppercase",
+        letterSpacing: "0.06em",
+        cursor: onClick ? "pointer" : "default",
+        userSelect: "none",
+        whiteSpace: "nowrap",
+      }}
+    >
+      {label}{active && (dir === 1 ? " ↑" : " ↓")}
+    </th>
+  )
+}
+
+function SkeletonPanel() {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+        {[...Array(4)].map((_, i) => <div key={i} className="skeleton" style={{ height: 80, borderRadius: 12 }} />)}
+      </div>
+      <div className="skeleton" style={{ height: 300, borderRadius: 16 }} />
+    </div>
+  )
+}
+
+function fmtVol(v: number): string {
   if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M`
   if (v >= 1_000)     return `${(v / 1_000).toFixed(0)}K`
   return String(v)

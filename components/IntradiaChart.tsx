@@ -7,348 +7,350 @@ import {
 } from 'recharts'
 
 type ChartPoint = {
-  time: string
-  close: number
-  open: number
-  high: number
-  low: number
-  rsi: number | null
-  sma20: number | null
-  sma50: number | null
-  macd: number | null
-  macdSignal: number | null
-  histogram: number | null
-  bbUpper: number | null
-  bbMid: number | null
-  bbLower: number | null
+  time: string; close: number; open: number; high: number; low: number
+  rsi: number | null; sma20: number | null; sma50: number | null
+  macd: number | null; macdSignal: number | null; histogram: number | null
+  bbUpper: number | null; bbMid: number | null; bbLower: number | null
 }
-
-type DayStats = {
-  open: number
-  high: number
-  low: number
-  close: number
-  pctChange: number
-  range: number
-}
-
+type DayStats = { open: number; high: number; low: number; close: number; pctChange: number; range: number }
 type TradingSignal = {
-  type: 'BUY' | 'SELL' | 'NEUTRAL'
-  strength: 'STRONG' | 'MODERATE' | 'WEAK'
-  reason: string
-  rsi: number | null
-  macdSignal: 'BULLISH' | 'BEARISH' | 'NEUTRAL'
-  bbPosition: 'ABOVE' | 'INSIDE' | 'BELOW'
+  type: 'BUY' | 'SELL' | 'NEUTRAL'; strength: 'STRONG' | 'MODERATE' | 'WEAK'
+  reason: string; rsi: number | null; macdSignal: 'BULLISH' | 'BEARISH' | 'NEUTRAL'; bbPosition: 'ABOVE' | 'INSIDE' | 'BELOW'
 }
-
 type IntradiaData = {
-  ticker: string
-  from: string
-  to: string
-  intervalo: string
-  points: number
-  dayStats: DayStats
-  signal: TradingSignal
-  chartData: ChartPoint[]
+  ticker: string; from: string; to: string; intervalo: string; points: number
+  dayStats: DayStats; signal: TradingSignal; chartData: ChartPoint[]
 }
-
 type Tab = 'precio' | 'rsi' | 'macd'
 
-// Tickers disponibles del IPC
 const IPC_TICKERS = [
-  'CEMEXCPO', 'GMEXICOB', 'FEMSAUBD', 'WALMEX*', 'BIMBOA',
-  'ASURB', 'GAPB', 'OMAB', 'GRUMAB', 'KOFUBL',
-  'GCARSOA1', 'GFINBURO', 'CHDRAUIB', 'BOLSAA', 'BBAJIOO',
-  'MEGACPO', 'LACOMERUBC', 'GENTERA*', 'ALSEA*', 'PINFRA*',
+  'CEMEXCPO','GMEXICOB','FEMSAUBD','WALMEX*','BIMBOA',
+  'ASURB','GAPB','OMAB','GRUMAB','KOFUBL',
+  'GCARSOA1','GFINBURO','CHDRAUIB','BOLSAA','BBAJIOO',
+  'MEGACPO','LACOMERUBC','GENTERA*','ALSEA*','PINFRA*',
 ]
 
+const TOOLTIP_STYLE = {
+  background: "#06090F",
+  border: "1px solid rgba(255,255,255,0.1)",
+  borderRadius: 10,
+  fontSize: 11,
+  fontFamily: "'Inter',sans-serif",
+  boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
+}
+
 export default function IntradiaChart() {
-  const [ticker, setTicker]   = useState('CEMEXCPO')
-  const [interval, setIntervalo] = useState<'1m' | '5m' | '1h'>('5m')
-  const [data, setData]       = useState<IntradiaData | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [tab, setTab]         = useState<Tab>('precio')
-  const [lastRefresh, setLastRefresh] = useState<Date | null>(null)
+  const [ticker,    setTicker]    = useState('CEMEXCPO')
+  const [intervalo, setIntervalo] = useState<'1m' | '5m' | '1h'>('5m')
+  const [data,      setData]      = useState<IntradiaData | null>(null)
+  const [loading,   setLoading]   = useState(true)
+  const [tab,       setTab]       = useState<Tab>('precio')
+  const [lastAt,    setLastAt]    = useState<Date | null>(null)
 
   const today = new Date().toISOString().slice(0, 10)
 
   const fetchData = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await fetch(
-        `/api/bmv/intradia?ticker=${ticker}&from=${today}&to=${today}&intervalo=${interval}`,
-        { cache: 'no-store' }
-      )
-      if (res.ok) {
-        setData(await res.json())
-        setLastRefresh(new Date())
-      }
-    } catch {} finally {
-      setLoading(false)
-    }
-  }, [ticker, interval, today])
+      const res = await fetch(`/api/bmv/intradia?ticker=${ticker}&from=${today}&to=${today}&intervalo=${intervalo}`, { cache: 'no-store' })
+      if (res.ok) { setData(await res.json()); setLastAt(new Date()) }
+    } catch { /* silently fail */ } finally { setLoading(false) }
+  }, [ticker, intervalo, today])
 
   useEffect(() => { fetchData() }, [fetchData])
+  useEffect(() => { const t = setInterval(fetchData, 60_000); return () => clearInterval(t) }, [fetchData])
 
-  // Auto-refresh cada 60s
-  useEffect(() => {
-    const t = setInterval(fetchData, 60_000)
-    return () => clearInterval(t)
-  }, [fetchData])
-
-  const formatTime = (t: string) => t.slice(11, 16) // HH:MM
-
-  const up = (data?.dayStats.pctChange ?? 0) >= 0
+  const fmt  = (t: string) => t.slice(11, 16)
+  const up   = (data?.dayStats.pctChange ?? 0) >= 0
+  const priceColor = up ? "#10B981" : "#EF4444"
 
   return (
-    <div className="space-y-4">
-      {/* Controls */}
-      <div className="flex flex-wrap items-center gap-3">
-        {/* Ticker selector */}
-        <div className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2">
-          <span className="text-zinc-500 text-xs">Emisora</span>
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+
+      {/* ── Controls bar ── */}
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
+
+        {/* Ticker select */}
+        <div style={{
+          display: "flex", alignItems: "center", gap: 8, padding: "7px 12px",
+          background: "rgba(8,13,24,0.8)", border: "1px solid rgba(255,255,255,0.07)",
+          borderRadius: 10,
+        }}>
+          <span style={{ fontSize: 10, color: "#334155", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase" }}>Emisora</span>
           <select
             value={ticker}
             onChange={e => setTicker(e.target.value)}
-            className="bg-transparent text-white text-sm font-mono font-semibold focus:outline-none cursor-pointer"
+            style={{
+              background: "transparent", color: "#F1F5F9",
+              fontSize: 13, fontWeight: 700, fontFamily: "'JetBrains Mono',monospace",
+              border: "none", outline: "none", cursor: "pointer", letterSpacing: "0.02em",
+            }}
           >
             {IPC_TICKERS.map(t => (
-              <option key={t} value={t} className="bg-zinc-900">
-                {t.replace('*', '')}
-              </option>
+              <option key={t} value={t} style={{ background: "#080D18" }}>{t.replace('*', '')}</option>
             ))}
           </select>
         </div>
 
-        {/* Interval selector */}
-        <div className="flex gap-1 p-1 bg-zinc-900 border border-zinc-800 rounded-xl">
+        {/* Interval pills */}
+        <div style={{ display: "flex", gap: 3, padding: 3, background: "rgba(8,13,24,0.8)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 10 }}>
           {(['1m', '5m', '1h'] as const).map(iv => (
             <button
               key={iv}
               onClick={() => setIntervalo(iv)}
-              className={`px-3 py-1 rounded-lg text-xs font-mono font-medium transition-all ${
-                interval === iv
-                  ? 'bg-orange-500 text-white'
-                  : 'text-zinc-400 hover:text-white'
-              }`}
-            >
-              {iv}
-            </button>
+              style={{
+                padding: "5px 12px", borderRadius: 7,
+                fontSize: 12, fontWeight: 700, fontFamily: "'JetBrains Mono',monospace",
+                color: intervalo === iv ? "#F1F5F9" : "#334155",
+                background: intervalo === iv ? "rgba(99,102,241,0.2)" : "transparent",
+                border: intervalo === iv ? "1px solid rgba(99,102,241,0.35)" : "1px solid transparent",
+                cursor: "pointer", transition: "all 0.12s",
+              }}
+            >{iv}</button>
           ))}
         </div>
 
-        {/* Tab selector */}
-        <div className="flex gap-1 p-1 bg-zinc-900 border border-zinc-800 rounded-xl">
+        {/* Chart type pills */}
+        <div style={{ display: "flex", gap: 3, padding: 3, background: "rgba(8,13,24,0.8)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 10 }}>
           {([
-            { id: 'precio' as Tab, label: 'Precio + BB' },
+            { id: 'precio' as Tab, label: 'Precio' },
             { id: 'rsi'    as Tab, label: 'RSI' },
             { id: 'macd'   as Tab, label: 'MACD' },
           ]).map(t => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
-                tab === t.id
-                  ? 'bg-zinc-700 text-white'
-                  : 'text-zinc-500 hover:text-white'
-              }`}
-            >
-              {t.label}
-            </button>
+              style={{
+                padding: "5px 12px", borderRadius: 7,
+                fontSize: 12, fontWeight: 600,
+                color: tab === t.id ? "#F1F5F9" : "#334155",
+                background: tab === t.id ? "rgba(255,255,255,0.08)" : "transparent",
+                border: tab === t.id ? "1px solid rgba(255,255,255,0.12)" : "1px solid transparent",
+                cursor: "pointer", transition: "all 0.12s",
+              }}
+            >{t.label}</button>
           ))}
         </div>
 
         {/* Refresh */}
         <button
           onClick={fetchData}
-          className="ml-auto flex items-center gap-1.5 px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-xl text-zinc-400 hover:text-white text-xs transition-colors"
+          style={{
+            marginLeft: "auto", display: "flex", alignItems: "center", gap: 6,
+            padding: "7px 12px",
+            background: "rgba(8,13,24,0.8)", border: "1px solid rgba(255,255,255,0.07)",
+            borderRadius: 10, color: "#334155", fontSize: 11, cursor: "pointer",
+            transition: "color 0.1s, border-color 0.1s",
+          }}
         >
-          <span className={loading ? 'animate-spin' : ''}>↻</span>
-          {lastRefresh ? lastRefresh.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }) : '—'}
+          <span style={{ display: "inline-block", animation: loading ? "spin 1s linear infinite" : "none", fontSize: 13 }}>↻</span>
+          {lastAt ? lastAt.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }) : "—"}
         </button>
       </div>
 
-      {/* Stats bar */}
+      {/* ── Price stats bar ── */}
       {data && !loading && (
-        <div className="flex flex-wrap items-center gap-4 px-4 py-3 bg-zinc-900/60 border border-zinc-800/60 rounded-xl">
-          <span className="font-mono font-bold text-white text-lg">
+        <div style={{
+          display: "flex", flexWrap: "wrap", alignItems: "center", gap: 16,
+          padding: "14px 18px",
+          background: "rgba(8,13,24,0.8)", border: "1px solid rgba(255,255,255,0.07)",
+          borderRadius: 12,
+        }}>
+          <span className="num" style={{ fontSize: 14, fontWeight: 800, color: "#94A3B8", letterSpacing: "0.04em" }}>
             {ticker.replace('*', '')}
           </span>
-          <span className={`font-mono font-bold text-xl ${up ? 'text-emerald-400' : 'text-red-400'}`}>
+          <span className="num" style={{ fontSize: 22, fontWeight: 800, color: priceColor, letterSpacing: "-0.03em" }}>
             ${data.dayStats.close.toFixed(2)}
           </span>
-          <span className={`font-mono text-sm font-medium ${up ? 'text-emerald-400' : 'text-red-400'}`}>
-            {up ? '▲' : '▼'} {Math.abs(data.dayStats.pctChange).toFixed(2)}%
+          <span className="num" style={{ fontSize: 13, fontWeight: 700, color: priceColor }}>
+            {up ? "▲" : "▼"} {Math.abs(data.dayStats.pctChange).toFixed(2)}%
           </span>
-          <div className="flex items-center gap-3 text-xs text-zinc-500 ml-2">
-            <span>A: <span className="text-zinc-300">${data.dayStats.open.toFixed(2)}</span></span>
-            <span>Max: <span className="text-emerald-400">${data.dayStats.high.toFixed(2)}</span></span>
-            <span>Min: <span className="text-red-400">${data.dayStats.low.toFixed(2)}</span></span>
-            <span>Rango: <span className="text-zinc-300">${data.dayStats.range.toFixed(2)}</span></span>
-            <span className="text-zinc-600">·</span>
-            <span>{data.points} velas</span>
+
+          <div style={{ display: "flex", gap: 16, marginLeft: 4 }}>
+            {[
+              { label: "A",   val: `$${data.dayStats.open.toFixed(2)}`,  col: "#94A3B8" },
+              { label: "Max", val: `$${data.dayStats.high.toFixed(2)}`,  col: "#10B981" },
+              { label: "Min", val: `$${data.dayStats.low.toFixed(2)}`,   col: "#EF4444" },
+              { label: "Rng", val: `$${data.dayStats.range.toFixed(2)}`, col: "#94A3B8" },
+            ].map(s => (
+              <div key={s.label} style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                <span style={{ fontSize: 9, color: "#334155", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase" }}>{s.label}</span>
+                <span className="num" style={{ fontSize: 12, fontWeight: 600, color: s.col }}>{s.val}</span>
+              </div>
+            ))}
+            <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+              <span style={{ fontSize: 9, color: "#334155", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase" }}>Velas</span>
+              <span className="num" style={{ fontSize: 12, fontWeight: 600, color: "#475569" }}>{data.points}</span>
+            </div>
           </div>
 
-          {/* Señal IA */}
           <SignalBadge signal={data.signal} />
         </div>
       )}
 
-      {/* Chart */}
-      <div className="bg-zinc-900/40 border border-zinc-800/60 rounded-xl p-4" style={{ height: 340 }}>
+      {/* ── Chart ── */}
+      <div style={{
+        background: "rgba(6,9,15,0.9)", border: "1px solid rgba(255,255,255,0.06)",
+        borderRadius: 14, padding: "16px 4px 8px", height: 360,
+      }}>
         {loading ? (
-          <div className="h-full flex items-center justify-center">
-            <div className="text-zinc-600 text-sm animate-pulse">Cargando datos...</div>
+          <div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
+              <div style={{ width: 20, height: 20, borderRadius: "50%", border: "2px solid rgba(99,102,241,0.4)", borderTop: "2px solid #6366F1", animation: "spin 0.8s linear infinite" }} />
+              <span style={{ fontSize: 11, color: "#334155" }}>Cargando datos...</span>
+            </div>
           </div>
         ) : !data?.chartData?.length ? (
-          <div className="h-full flex items-center justify-center">
-            <div className="text-zinc-600 text-sm">Sin datos disponibles</div>
+          <div style={{ height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8 }}>
+            <span style={{ fontSize: 24, opacity: 0.3 }}>📊</span>
+            <span style={{ fontSize: 12, color: "#334155" }}>Sin datos disponibles para hoy</span>
+            <span style={{ fontSize: 11, color: "#1E293B" }}>Mercado cerrado o sin operaciones en {ticker.replace('*','')}</span>
           </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             {tab === 'precio' ? (
-              <ComposedChart data={data.chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" vertical={false} />
+              <ComposedChart data={data.chartData} margin={{ top: 4, right: 12, left: 0, bottom: 4 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
                 <XAxis
-                  dataKey="time"
-                  tickFormatter={formatTime}
-                  tick={{ fill: '#6b7280', fontSize: 10 }}
-                  tickLine={false}
+                  dataKey="time" tickFormatter={fmt}
+                  tick={{ fill: "#1E293B", fontSize: 9, fontFamily: "'JetBrains Mono',monospace" }}
+                  tickLine={false} axisLine={false}
                   interval={Math.floor(data.chartData.length / 8)}
                 />
                 <YAxis
                   domain={['auto', 'auto']}
-                  tick={{ fill: '#6b7280', fontSize: 10 }}
-                  tickLine={false}
-                  axisLine={false}
-                  tickFormatter={v => `$${v}`}
-                  width={55}
+                  tick={{ fill: "#1E293B", fontSize: 9, fontFamily: "'JetBrains Mono',monospace" }}
+                  tickLine={false} axisLine={false}
+                  tickFormatter={v => `${v}`} width={50}
                 />
-                <Tooltip
-                  contentStyle={{ background: '#111827', border: '1px solid #374151', borderRadius: 8, fontSize: 11 }}
-                  labelFormatter={(t) => typeof t === 'string' ? formatTime(t) : String(t)}
-                  formatter={(v, name) => [typeof v === 'number' ? `$${v.toFixed(2)}` : String(v), String(name)]}
+                <Tooltip contentStyle={TOOLTIP_STYLE}
+                  labelFormatter={t => typeof t === 'string' ? fmt(t) : String(t)}
+                  formatter={(v, n) => [typeof v === 'number' ? `$${v.toFixed(2)}` : String(v), String(n)]}
                 />
-                <Legend wrapperStyle={{ fontSize: 11, color: '#9ca3af' }} />
-                {/* Bollinger Bands */}
-                <Line type="monotone" dataKey="bbUpper"  name="BB Superior" stroke="#374151" strokeWidth={1} dot={false} strokeDasharray="3 3" />
-                <Line type="monotone" dataKey="bbMid"    name="BB Media"    stroke="#4b5563" strokeWidth={1} dot={false} strokeDasharray="2 2" />
-                <Line type="monotone" dataKey="bbLower"  name="BB Inferior" stroke="#374151" strokeWidth={1} dot={false} strokeDasharray="3 3" />
-                {/* SMAs */}
-                <Line type="monotone" dataKey="sma20"    name="SMA 20" stroke="#f59e0b" strokeWidth={1.5} dot={false} />
-                <Line type="monotone" dataKey="sma50"    name="SMA 50" stroke="#8b5cf6" strokeWidth={1.5} dot={false} />
-                {/* Precio */}
-                <Line
-                  type="monotone" dataKey="close" name="Precio"
-                  stroke={up ? '#34d399' : '#f87171'}
-                  strokeWidth={2} dot={false}
-                  activeDot={{ r: 3, fill: up ? '#34d399' : '#f87171' }}
+                <Legend wrapperStyle={{ fontSize: 10, color: "#334155", paddingTop: 8 }} />
+                <Line type="monotone" dataKey="bbUpper"  name="BB +" stroke="rgba(99,102,241,0.35)" strokeWidth={1} dot={false} strokeDasharray="4 4" />
+                <Line type="monotone" dataKey="bbMid"    name="BB M"  stroke="rgba(99,102,241,0.2)" strokeWidth={1} dot={false} strokeDasharray="2 4" />
+                <Line type="monotone" dataKey="bbLower"  name="BB -"  stroke="rgba(99,102,241,0.35)" strokeWidth={1} dot={false} strokeDasharray="4 4" />
+                <Line type="monotone" dataKey="sma20"    name="SMA20" stroke="#F59E0B" strokeWidth={1.5} dot={false} strokeOpacity={0.8} />
+                <Line type="monotone" dataKey="sma50"    name="SMA50" stroke="#8B5CF6" strokeWidth={1.5} dot={false} strokeOpacity={0.8} />
+                <Line type="monotone" dataKey="close"    name="Precio"
+                  stroke={priceColor} strokeWidth={2.5} dot={false}
+                  activeDot={{ r: 4, fill: priceColor, strokeWidth: 0 }}
                 />
               </ComposedChart>
             ) : tab === 'rsi' ? (
-              <ComposedChart data={data.chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" vertical={false} />
-                <XAxis
-                  dataKey="time"
-                  tickFormatter={formatTime}
-                  tick={{ fill: '#6b7280', fontSize: 10 }}
-                  tickLine={false}
+              <ComposedChart data={data.chartData} margin={{ top: 4, right: 12, left: 0, bottom: 4 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+                <XAxis dataKey="time" tickFormatter={fmt}
+                  tick={{ fill: "#1E293B", fontSize: 9, fontFamily: "'JetBrains Mono',monospace" }}
+                  tickLine={false} axisLine={false}
                   interval={Math.floor(data.chartData.length / 8)}
                 />
-                <YAxis
-                  domain={[0, 100]}
-                  tick={{ fill: '#6b7280', fontSize: 10 }}
-                  tickLine={false}
-                  axisLine={false}
-                  ticks={[0, 30, 50, 70, 100]}
-                  width={35}
+                <YAxis domain={[0, 100]} ticks={[0, 30, 50, 70, 100]}
+                  tick={{ fill: "#1E293B", fontSize: 9, fontFamily: "'JetBrains Mono',monospace" }}
+                  tickLine={false} axisLine={false} width={30}
                 />
-                <Tooltip
-                  contentStyle={{ background: '#111827', border: '1px solid #374151', borderRadius: 8, fontSize: 11 }}
-                  labelFormatter={(t) => typeof t === 'string' ? formatTime(t) : String(t)}
-                  formatter={(v) => [typeof v === 'number' ? v.toFixed(1) : String(v), 'RSI']}
+                <Tooltip contentStyle={TOOLTIP_STYLE}
+                  labelFormatter={t => typeof t === 'string' ? fmt(t) : String(t)}
+                  formatter={v => [typeof v === 'number' ? v.toFixed(1) : String(v), 'RSI(14)']}
                 />
-                {/* Zonas de referencia */}
-                <ReferenceLine y={70} stroke="#f87171" strokeDasharray="4 4" strokeOpacity={0.7} label={{ value: 'Sobrecompra', fill: '#f87171', fontSize: 9 }} />
-                <ReferenceLine y={30} stroke="#34d399" strokeDasharray="4 4" strokeOpacity={0.7} label={{ value: 'Sobreventa', fill: '#34d399', fontSize: 9 }} />
-                <ReferenceLine y={50} stroke="#6b7280" strokeDasharray="2 2" strokeOpacity={0.4} />
-                <Line
-                  type="monotone" dataKey="rsi" name="RSI(14)"
-                  stroke="#f97316" strokeWidth={2} dot={false}
-                  activeDot={{ r: 3 }}
+                <ReferenceLine y={70} stroke="rgba(239,68,68,0.5)"  strokeDasharray="4 4" label={{ value: '70', fill: '#EF4444', fontSize: 9, position: 'right' }} />
+                <ReferenceLine y={50} stroke="rgba(255,255,255,0.06)" strokeDasharray="2 4" />
+                <ReferenceLine y={30} stroke="rgba(16,185,129,0.5)" strokeDasharray="4 4" label={{ value: '30', fill: '#10B981', fontSize: 9, position: 'right' }} />
+                <Line type="monotone" dataKey="rsi" name="RSI"
+                  stroke="#6366F1" strokeWidth={2.5} dot={false}
+                  activeDot={{ r: 4, fill: '#6366F1', strokeWidth: 0 }}
                 />
               </ComposedChart>
             ) : (
-              <ComposedChart data={data.chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" vertical={false} />
-                <XAxis
-                  dataKey="time"
-                  tickFormatter={formatTime}
-                  tick={{ fill: '#6b7280', fontSize: 10 }}
-                  tickLine={false}
+              <ComposedChart data={data.chartData} margin={{ top: 4, right: 12, left: 0, bottom: 4 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+                <XAxis dataKey="time" tickFormatter={fmt}
+                  tick={{ fill: "#1E293B", fontSize: 9, fontFamily: "'JetBrains Mono',monospace" }}
+                  tickLine={false} axisLine={false}
                   interval={Math.floor(data.chartData.length / 8)}
                 />
                 <YAxis
-                  tick={{ fill: '#6b7280', fontSize: 10 }}
-                  tickLine={false}
-                  axisLine={false}
-                  width={50}
+                  tick={{ fill: "#1E293B", fontSize: 9, fontFamily: "'JetBrains Mono',monospace" }}
+                  tickLine={false} axisLine={false} width={50}
                 />
-                <Tooltip
-                  contentStyle={{ background: '#111827', border: '1px solid #374151', borderRadius: 8, fontSize: 11 }}
-                  labelFormatter={(t) => typeof t === 'string' ? formatTime(t) : String(t)}
-                  formatter={(v, name) => [typeof v === 'number' ? v.toFixed(4) : String(v), String(name)]}
+                <Tooltip contentStyle={TOOLTIP_STYLE}
+                  labelFormatter={t => typeof t === 'string' ? fmt(t) : String(t)}
+                  formatter={(v, n) => [typeof v === 'number' ? v.toFixed(4) : String(v), String(n)]}
                 />
-                <Legend wrapperStyle={{ fontSize: 11, color: '#9ca3af' }} />
-                <ReferenceLine y={0} stroke="#4b5563" strokeOpacity={0.6} />
-                <Bar dataKey="histogram" name="Histograma" fillOpacity={0.7}>
-                  {data.chartData.map((entry, i) => (
-                    <Cell key={i} fill={(entry.histogram ?? 0) >= 0 ? '#34d399' : '#f87171'} />
+                <Legend wrapperStyle={{ fontSize: 10, color: "#334155", paddingTop: 8 }} />
+                <ReferenceLine y={0} stroke="rgba(255,255,255,0.08)" />
+                <Bar dataKey="histogram" name="Histo" fillOpacity={0.75} maxBarSize={6}>
+                  {data.chartData.map((e, i) => (
+                    <Cell key={i} fill={(e.histogram ?? 0) >= 0 ? "#10B981" : "#EF4444"} />
                   ))}
                 </Bar>
-                <Line type="monotone" dataKey="macd"       name="MACD"    stroke="#60a5fa" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="macdSignal" name="Señal"   stroke="#f97316" strokeWidth={1.5} dot={false} strokeDasharray="4 4" />
+                <Line type="monotone" dataKey="macd"       name="MACD"  stroke="#60A5FA" strokeWidth={2}   dot={false} />
+                <Line type="monotone" dataKey="macdSignal" name="Señal" stroke="#F59E0B" strokeWidth={1.5} dot={false} strokeDasharray="4 4" />
               </ComposedChart>
             )}
           </ResponsiveContainer>
         )}
       </div>
 
-      {/* Signal detail */}
+      {/* ── Signal detail ── */}
       {data?.signal && !loading && (
-        <div className={`border rounded-xl px-4 py-3 text-sm flex flex-wrap items-center gap-4 ${
-          data.signal.type === 'BUY'  ? 'bg-emerald-500/5 border-emerald-500/20' :
-          data.signal.type === 'SELL' ? 'bg-red-500/5 border-red-500/20' :
-          'bg-zinc-900/60 border-zinc-800/60'
-        }`}>
-          <span className="text-zinc-400">Señal IA:</span>
-          <span className="font-semibold text-zinc-200">{data.signal.reason}</span>
-          <div className="flex gap-3 text-xs ml-auto flex-wrap">
-            <span className="text-zinc-500">RSI: <span className="text-zinc-300 font-mono">{data.signal.rsi?.toFixed(1) ?? '—'}</span></span>
-            <span className="text-zinc-500">MACD: <span className={data.signal.macdSignal === 'BULLISH' ? 'text-emerald-400' : data.signal.macdSignal === 'BEARISH' ? 'text-red-400' : 'text-zinc-400'}>{data.signal.macdSignal}</span></span>
-            <span className="text-zinc-500">BB: <span className="text-zinc-300">{data.signal.bbPosition}</span></span>
+        <div style={{
+          display: "flex", flexWrap: "wrap", alignItems: "center", gap: 14,
+          padding: "12px 18px", borderRadius: 12,
+          background: data.signal.type === 'BUY'  ? "rgba(16,185,129,0.05)"
+                    : data.signal.type === 'SELL' ? "rgba(239,68,68,0.05)"
+                    : "rgba(8,13,24,0.8)",
+          border: `1px solid ${
+            data.signal.type === 'BUY'  ? "rgba(16,185,129,0.2)"
+          : data.signal.type === 'SELL' ? "rgba(239,68,68,0.2)"
+          : "rgba(255,255,255,0.07)"
+          }`,
+        }}>
+          <span style={{ fontSize: 12, color: "#475569" }}>Señal IA:</span>
+          <span style={{ fontSize: 12, fontWeight: 600, color: "#CBD5E1" }}>{data.signal.reason}</span>
+          <div style={{ display: "flex", gap: 14, marginLeft: "auto" }}>
+            {[
+              { label: "RSI",  val: data.signal.rsi?.toFixed(1) ?? "—" },
+              { label: "MACD", val: data.signal.macdSignal,
+                col: data.signal.macdSignal === 'BULLISH' ? "#10B981" : data.signal.macdSignal === 'BEARISH' ? "#EF4444" : "#475569" },
+              { label: "BB",   val: data.signal.bbPosition },
+            ].map(s => (
+              <div key={s.label} style={{ display: "flex", gap: 4, alignItems: "center" }}>
+                <span style={{ fontSize: 10, color: "#334155", textTransform: "uppercase", letterSpacing: "0.06em" }}>{s.label}</span>
+                <span className="num" style={{ fontSize: 11, fontWeight: 600, color: s.col ?? "#94A3B8" }}>{s.val}</span>
+              </div>
+            ))}
           </div>
         </div>
       )}
+
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   )
 }
 
-// ─── Badge de señal ────────────────────────────────────────────────────────────
-
 function SignalBadge({ signal }: { signal: TradingSignal }) {
-  const colors = {
-    BUY:     { bg: 'bg-emerald-500/10 border-emerald-500/30', text: 'text-emerald-400' },
-    SELL:    { bg: 'bg-red-500/10 border-red-500/30',         text: 'text-red-400' },
-    NEUTRAL: { bg: 'bg-zinc-800/60 border-zinc-700',          text: 'text-zinc-400' },
-  }
-  const strengthLabel = { STRONG: '●●●', MODERATE: '●●○', WEAK: '●○○' }
-  const c = colors[signal.type]
+  const isBuy  = signal.type === 'BUY'
+  const isSell = signal.type === 'SELL'
+  const color  = isBuy ? "#10B981" : isSell ? "#EF4444" : "#475569"
+  const bg     = isBuy ? "rgba(16,185,129,0.1)" : isSell ? "rgba(239,68,68,0.1)" : "rgba(71,85,105,0.2)"
+  const brd    = isBuy ? "rgba(16,185,129,0.3)"  : isSell ? "rgba(239,68,68,0.3)"  : "rgba(71,85,105,0.3)"
+  const dots   = { STRONG: "●●●", MODERATE: "●●○", WEAK: "●○○" }
+  const labels = { BUY: "COMPRA", SELL: "VENTA", NEUTRAL: "NEUTRAL" }
 
   return (
-    <div className={`ml-auto flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-medium ${c.bg} ${c.text}`}>
-      <span className="font-mono">{strengthLabel[signal.strength]}</span>
-      <span>{signal.type === 'BUY' ? '▲ COMPRA' : signal.type === 'SELL' ? '▼ VENTA' : '→ NEUTRAL'}</span>
+    <div
+      style={{
+        marginLeft: "auto", display: "flex", alignItems: "center", gap: 6,
+        padding: "6px 12px", borderRadius: 8,
+        background: bg, border: `1px solid ${brd}`, color,
+      }}
+    >
+      <span className="num" style={{ fontSize: 10, letterSpacing: "0.08em" }}>{dots[signal.strength]}</span>
+      <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.04em" }}>
+        {isBuy ? "▲ " : isSell ? "▼ " : "→ "}{labels[signal.type]}
+      </span>
     </div>
   )
 }

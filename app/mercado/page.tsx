@@ -1,142 +1,206 @@
 'use client'
 
 import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { BMVMarketPanel } from '@/components/BMVTicker'
 import IntradiaChart from '@/components/IntradiaChart'
 import MercadoGlobal from '@/components/MercadoGlobal'
-import AnimatedSection from '@/components/AnimatedSection'
 
 type Tab = 'overview' | 'intradia' | 'bmv' | 'us'
+
+const TABS: { id: Tab; label: string; desc: string }[] = [
+  { id: 'overview', label: 'Global',    desc: 'Índices + Divisas + Noticias' },
+  { id: 'intradia', label: 'Intradía',  desc: 'Análisis técnico + IA' },
+  { id: 'bmv',      label: 'IPC Table', desc: 'Emisoras en tiempo real' },
+  { id: 'us',       label: 'EE.UU.',    desc: 'S&P 500 · Próximamente' },
+]
+
+const FADE = {
+  initial: { opacity: 0, y: 8 },
+  animate: { opacity: 1, y: 0 },
+  exit:    { opacity: 0, y: -4 },
+  transition: { duration: 0.25, ease: [0.4, 0, 0.2, 1] },
+}
 
 export default function MercadoPage() {
   const [tab, setTab] = useState<Tab>('overview')
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white">
-      {/* Header */}
-      <div className="border-b border-zinc-800">
-        <div className="max-w-7xl mx-auto px-6 py-7">
-          <div className="flex items-center gap-3 mb-1">
-            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-emerald-400 text-sm font-medium">En vivo</span>
-            <span className="text-zinc-600 text-sm">·</span>
-            <span className="text-zinc-500 text-sm">Sesión BMV: 08:30 – 15:00 CST</span>
+    <div style={{ minHeight: "100vh", background: "var(--bg-base)" }}>
+
+      {/* ── Hero header ── */}
+      <div style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+            <div className="live-dot" />
+            <span style={{ fontSize: 12, fontWeight: 500, color: "#10B981", letterSpacing: "0.04em" }}>
+              EN VIVO
+            </span>
+            <span style={{ width: 1, height: 14, background: "rgba(255,255,255,0.1)", display: "inline-block", margin: "0 4px" }} />
+            <span style={{ fontSize: 12, color: "#334155" }}>Sesión BMV 08:30 – 15:00 CST</span>
           </div>
-          <h1 className="text-3xl font-bold text-white">Mercado en Tiempo Real</h1>
+          <h1
+            className="gradient-text"
+            style={{ fontSize: 30, fontWeight: 800, letterSpacing: "-0.03em", lineHeight: 1.1, marginBottom: 6 }}
+          >
+            Mercado en Tiempo Real
+          </h1>
+          <p style={{ fontSize: 13, color: "#475569" }}>
+            Datos en vivo · BMV · Fuente: DataBursatil
+          </p>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-6 py-6 space-y-6">
 
-        {/* Tabs */}
-        <div className="flex gap-1 p-1 bg-zinc-900/60 border border-zinc-800/60 rounded-xl w-fit">
-          {([
-            { id: 'overview'  as Tab, label: '🌍 Mercado Global' },
-            { id: 'intradia'  as Tab, label: '⚡ Intradía + IA' },
-            { id: 'bmv'       as Tab, label: '🇲🇽 Tabla IPC' },
-            { id: 'us'        as Tab, label: '🇺🇸 EE.UU.' },
-          ]).map(t => (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                tab === t.id
-                  ? 'bg-orange-500 text-white shadow'
-                  : 'text-zinc-400 hover:text-white'
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
+        {/* ── Tab bar premium ── */}
+        <div
+          style={{
+            display: "inline-flex",
+            padding: 4,
+            background: "rgba(8,13,24,0.8)",
+            border: "1px solid rgba(255,255,255,0.06)",
+            borderRadius: 14,
+            gap: 2,
+          }}
+        >
+          {TABS.map(t => {
+            const active = tab === t.id
+            return (
+              <button
+                key={t.id}
+                onClick={() => setTab(t.id)}
+                title={t.desc}
+                style={{
+                  padding: "7px 16px",
+                  borderRadius: 10,
+                  fontSize: 13,
+                  fontWeight: active ? 600 : 500,
+                  color: active ? "#F1F5F9" : "#475569",
+                  background: active
+                    ? "rgba(255,255,255,0.08)"
+                    : "transparent",
+                  border: active
+                    ? "1px solid rgba(255,255,255,0.1)"
+                    : "1px solid transparent",
+                  cursor: "pointer",
+                  transition: "all 0.15s ease",
+                  letterSpacing: active ? "-0.01em" : "0",
+                  boxShadow: active ? "0 1px 0 rgba(255,255,255,0.06) inset" : "none",
+                }}
+              >
+                {t.label}
+              </button>
+            )
+          })}
         </div>
 
-        {/* ── Mercado Global ── */}
-        {tab === 'overview' && (
-          <AnimatedSection>
-            <MercadoGlobal />
-          </AnimatedSection>
-        )}
+        {/* ── Tab content ── */}
+        <AnimatePresence mode="wait">
 
-        {/* ── Tabla IPC ── */}
-        {tab === 'bmv' && (
-          <AnimatedSection>
-            <div className="bg-zinc-900/40 border border-zinc-800/60 rounded-2xl p-6">
-              <div className="flex items-center justify-between mb-5">
-                <div>
-                  <h2 className="text-xl font-semibold text-white">Emisoras IPC — BMV</h2>
-                  <p className="text-zinc-500 text-sm mt-0.5">
-                    Actualización automática cada 60 s · DataBursatil
-                  </p>
+          {tab === 'overview' && (
+            <motion.div key="overview" {...FADE}>
+              <MercadoGlobal />
+            </motion.div>
+          )}
+
+          {tab === 'bmv' && (
+            <motion.div key="bmv" {...FADE}>
+              <div className="glass-card" style={{ padding: 24 }}>
+                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20 }}>
+                  <div>
+                    <h2 style={{ fontSize: 16, fontWeight: 700, color: "#F1F5F9", marginBottom: 3, letterSpacing: "-0.02em" }}>
+                      Emisoras IPC — BMV
+                    </h2>
+                    <p style={{ fontSize: 12, color: "#334155" }}>
+                      Actualización automática cada 60s · DataBursatil
+                    </p>
+                  </div>
+                  <div style={{
+                    display: "flex", alignItems: "center", gap: 6, padding: "5px 10px",
+                    background: "rgba(16,185,129,0.07)", borderRadius: 8,
+                    border: "1px solid rgba(16,185,129,0.15)",
+                  }}>
+                    <div className="live-dot" />
+                    <span style={{ fontSize: 11, color: "#10B981", fontWeight: 500, letterSpacing: "0.04em" }}>LIVE</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 text-xs text-zinc-500 bg-zinc-900 px-3 py-1.5 rounded-lg border border-zinc-800">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  Live feed
+                <BMVMarketPanel />
+              </div>
+            </motion.div>
+          )}
+
+          {tab === 'intradia' && (
+            <motion.div key="intradia" {...FADE}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                <div className="glass-card" style={{ padding: 24 }}>
+                  <div style={{ marginBottom: 20 }}>
+                    <h2 style={{ fontSize: 16, fontWeight: 700, color: "#F1F5F9", marginBottom: 3, letterSpacing: "-0.02em" }}>
+                      Análisis Intradía con IA
+                    </h2>
+                    <p style={{ fontSize: 12, color: "#334155" }}>
+                      Candlestick · Bollinger Bands · RSI · MACD · Señales automáticas
+                    </p>
+                  </div>
+                  <IntradiaChart />
+                </div>
+
+                {/* Info pills */}
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+                  {[
+                    { title: 'Minuto a minuto',   desc: 'Intervalos 1m, 5m y 1h durante sesión BMV (8:30–15:00 CST).', accent: '#6366F1' },
+                    { title: 'RSI · MACD · BB',   desc: 'Tres indicadores combinados para detectar zonas de compra y venta con nivel de confianza.', accent: '#10B981' },
+                    { title: 'Cache 60 s',         desc: 'Datos actualizados automáticamente. Refresca en cualquier momento.', accent: '#F59E0B' },
+                  ].map(c => (
+                    <div
+                      key={c.title}
+                      className="glass-card-sm"
+                      style={{ padding: "14px 16px" }}
+                    >
+                      <div style={{ width: 3, height: 20, borderRadius: 2, background: c.accent, marginBottom: 10 }} />
+                      <h3 style={{ fontSize: 12, fontWeight: 600, color: "#CBD5E1", marginBottom: 4 }}>{c.title}</h3>
+                      <p style={{ fontSize: 11, color: "#334155", lineHeight: 1.5 }}>{c.desc}</p>
+                    </div>
+                  ))}
                 </div>
               </div>
-              <BMVMarketPanel />
-            </div>
-          </AnimatedSection>
-        )}
+            </motion.div>
+          )}
 
-        {/* ── Análisis Intradía ── */}
-        {tab === 'intradia' && (
-          <AnimatedSection>
-            <div className="bg-zinc-900/40 border border-zinc-800/60 rounded-2xl p-6">
-              <div className="mb-5">
-                <h2 className="text-xl font-semibold text-white">Análisis Intradía con IA</h2>
-                <p className="text-zinc-500 text-sm mt-0.5">
-                  Candlestick · Bollinger Bands · RSI · MACD · Señales automáticas
+          {tab === 'us' && (
+            <motion.div key="us" {...FADE}>
+              <div
+                className="glass-card"
+                style={{ padding: "80px 40px", textAlign: "center" }}
+              >
+                <div style={{
+                  width: 52, height: 52, borderRadius: 14, margin: "0 auto 20px",
+                  background: "linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.2))",
+                  border: "1px solid rgba(99,102,241,0.25)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 22,
+                }}>
+                  🇺🇸
+                </div>
+                <h3 style={{ fontSize: 20, fontWeight: 700, color: "#F1F5F9", marginBottom: 8, letterSpacing: "-0.03em" }}>
+                  S&P 500 en Tiempo Real
+                </h3>
+                <p style={{ fontSize: 13, color: "#475569", maxWidth: 400, margin: "0 auto 24px", lineHeight: 1.6 }}>
+                  Datos intradía del mercado americano vía Polygon.io WebSocket.
+                  Candlestick + indicadores + señales. Disponible en plan Pro+.
                 </p>
+                <span style={{
+                  display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 14px",
+                  background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.2)",
+                  borderRadius: 8, fontSize: 12, color: "#818CF8", fontWeight: 500,
+                }}>
+                  En desarrollo · Q3 2026
+                </span>
               </div>
-              <IntradiaChart />
-            </div>
+            </motion.div>
+          )}
 
-            {/* Info cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-              {[
-                {
-                  icon: '📊',
-                  title: 'Precios minuto a minuto',
-                  desc: 'Datos 1m, 5m y 1h en tiempo real durante la sesión bursátil de BMV (8:30-15:00 CST).',
-                },
-                {
-                  icon: '🤖',
-                  title: 'Señales RSI + MACD + BB',
-                  desc: 'El modelo combina tres indicadores técnicos para detectar zonas de compra/venta con nivel de confianza.',
-                },
-                {
-                  icon: '⚡',
-                  title: 'Cache 60 segundos',
-                  desc: 'Los datos se actualizan automáticamente. Refresca manualmente en cualquier momento.',
-                },
-              ].map(card => (
-                <div key={card.title} className="bg-zinc-900/60 border border-zinc-800/60 rounded-xl p-4">
-                  <div className="text-2xl mb-2">{card.icon}</div>
-                  <h3 className="text-white font-semibold text-sm mb-1">{card.title}</h3>
-                  <p className="text-zinc-500 text-xs">{card.desc}</p>
-                </div>
-              ))}
-            </div>
-          </AnimatedSection>
-        )}
-
-        {/* ── EE.UU. — Coming soon ── */}
-        {tab === 'us' && (
-          <AnimatedSection>
-            <div className="bg-zinc-900/40 border border-zinc-800/60 rounded-2xl p-14 text-center">
-              <div className="text-4xl mb-4">🚀</div>
-              <h3 className="text-xl font-semibold text-white mb-2">S&P 500 en Tiempo Real</h3>
-              <p className="text-zinc-400 mb-6 max-w-md mx-auto text-sm">
-                Datos intradía del mercado americano via Polygon.io WebSocket.
-                Candlestick + indicadores + señales. Disponible en plan Pro+.
-              </p>
-              <div className="inline-flex items-center gap-2 bg-orange-500/10 border border-orange-500/20 text-orange-400 px-4 py-2 rounded-lg text-sm">
-                En desarrollo · Q3 2025
-              </div>
-            </div>
-          </AnimatedSection>
-        )}
-
+        </AnimatePresence>
       </div>
     </div>
   )
