@@ -150,7 +150,8 @@ export async function getCotizaciones(
     })
     if (!res.ok) return {}
     const data = await res.json() as DBCotizacionesRaw
-    if (!data || (data as any)?.error || (data as any)?.Error) return {}
+    const d = data as Record<string, unknown>
+    if (!d || d['error'] || d['Error']) return {}
 
     const result: Record<string, DBCotizacion> = {}
     for (const [ticker, exchanges] of Object.entries(data)) {

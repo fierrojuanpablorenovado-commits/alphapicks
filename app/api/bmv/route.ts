@@ -5,13 +5,10 @@
  * Cache: 60 segundos
  */
 
-import { NextRequest, NextResponse } from 'next/server'
-import { getIPCQuotes, getDivisas, IPC_DB_TICKERS, getCotizaciones } from '@/lib/databursatil'
+import { NextResponse } from 'next/server'
+import { getIPCQuotes, getDivisas } from '@/lib/databursatil'
 
-export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url)
-  const tickers = searchParams.get('tickers')?.split(',') ?? IPC_DB_TICKERS
-
+export async function GET() {
   try {
     const [quotes, divisas] = await Promise.all([
       getIPCQuotes(60),

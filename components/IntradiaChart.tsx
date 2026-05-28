@@ -302,8 +302,8 @@ export default function IntradiaChart() {
                 <Legend wrapperStyle={{ fontSize: 11, color: '#9ca3af' }} />
                 <ReferenceLine y={0} stroke="#4b5563" strokeOpacity={0.6} />
                 <Bar dataKey="histogram" name="Histograma" fill="#6b7280"
-                  shape={(props: any) => {
-                    const { x, y, width, height, value } = props
+                  shape={(props: { x?: number; y?: number; width?: number; height?: number; value?: number }) => {
+                    const { x = 0, y = 0, width = 0, height = 0, value = 0 } = props
                     const fill = value >= 0 ? '#34d399' : '#f87171'
                     return <rect x={x} y={y} width={width} height={height} fill={fill} fillOpacity={0.7} />
                   }}

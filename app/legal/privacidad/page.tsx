@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 import Link from "next/link";
 
 const LAST_UPDATE = "1 de junio de 2026";
