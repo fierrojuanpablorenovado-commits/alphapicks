@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import Navbar from "@/components/Navbar";
-import { BMVTickerBanner } from "@/components/BMVTicker";
+import AppShell from "@/components/AppShell";
 
 export const metadata: Metadata = {
   title: "AlphaPicks — Selección de acciones con IA",
@@ -12,9 +11,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="es">
       <body>
-        <BMVTickerBanner />
-        <Navbar />
-        <main className="min-h-screen">{children}</main>
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );
